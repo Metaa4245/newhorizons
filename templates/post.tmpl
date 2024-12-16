@@ -11,7 +11,7 @@ Public key
 ```
 
 {{ range $v := .Post.Replies }}
-{{ $v.Author.Name }} <{{ .Post.Author.PublicKeyHash }}> at {{ $v.Creation.Format "2006-01-02 15:04:05" }}
+{{ $v.Author.Name }} <{{ $v.Author.PublicKeyHash }}> at {{ $v.Creation.Format "2006-01-02 15:04:05" }}
 ```
 {{ $v.Body }}
 ```
