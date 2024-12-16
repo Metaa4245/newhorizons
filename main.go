@@ -3,20 +3,58 @@ package main
 import (
 	"bufio"
 	"crypto/tls"
+	"crypto/x509"
 	"log/slog"
 	"net/url"
 	"strings"
+	"text/template"
 )
 
-func root(c *tls.Conn) {
-
+type Context struct {
+	Connection  *tls.Conn
+	Reader      bufio.Reader
+	Writer      bufio.Writer
+	Certificate x509.Certificate
 }
 
-func handleConn(c *tls.Conn) {
-	c.Handshake()
-	r := bufio.NewReader(c)
+func root(c *Context) {
+	t, err := template.ParseFiles("templates/root.tmpl")
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
-	str, err := r.ReadString('\n')
+	_, err = c.Writer.WriteString("20 text/gemini\r\n")
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	err = t.Execute(&c.Writer, nil)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	err = c.Writer.Flush()
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+}
+
+func handleConn(conn *tls.Conn) {
+	defer conn.Close()
+	conn.Handshake()
+
+	c := &Context{
+		Connection:  conn,
+		Reader:      *bufio.NewReader(conn),
+		Writer:      *bufio.NewWriter(conn),
+		Certificate: *conn.ConnectionState().PeerCertificates[0],
+	}
+
+	str, err := c.Reader.ReadString('\n')
 	if err != nil {
 		slog.Error(err.Error())
 		return
