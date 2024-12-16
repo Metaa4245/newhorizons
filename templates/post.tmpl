@@ -1,22 +1,24 @@
 => {{ print "gemini://" .URL.Host "/reply/" .Post.Id }} Reply
 
-{{ .Post.Author.Name }} <{{ .Post.Author.PublicKeyHash }}> at {{ .Post.Creation.Format "2006-01-02 15:04:05" }}
-{{ .Post.Views }} views
 ```
+Name: {{ .Post.Author.Name }}
+Hash: {{ .Post.Author.PublicKeyHash }}
+Creation: {{ .Post.Creation.Format "2006-01-02 15:04:05" }}
 {{ .Post.Body }}
-```
-Public key
-```
+
+PUBLIC KEY
 {{ .Post.Author.PublicKey }}
 ```
 
-{{ range $v := .Post.Replies }}
-{{ $v.Author.Name }} <{{ $v.Author.PublicKeyHash }}> at {{ $v.Creation.Format "2006-01-02 15:04:05" }}
+{{ range $v, $i := .Post.Replies }}
+$i
 ```
+Name: {{ $v.Author.Name }}
+Hash: {{ $v.Author.PublicKeyHash }}
+Creation: {{ $v.Creation.Format "2006-01-02 15:04:05" }}
 {{ $v.Body }}
-```
-Public key
-```
+
+PUBLIC KEY
 {{ $v.Author.PublicKey }}
 ```
 {{ end }}
