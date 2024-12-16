@@ -21,7 +21,6 @@ import (
 
 type Identity struct {
 	Name          string
-	PublicKey     string
 	PublicKeyHash string
 }
 
@@ -170,7 +169,6 @@ func submitPost(c *Context) {
 
 	identity := &Identity{
 		Name:          c.Certificate.Issuer.CommonName,
-		PublicKey:     hex.EncodeToString(key),
 		PublicKeyHash: hex.EncodeToString(hash.Sum(nil)),
 	}
 

@@ -6,9 +6,6 @@ Hash: {{ .Post.Author.PublicKeyHash }}
 Creation: {{ .Post.Creation.Format "2006-01-02 15:04:05" }}
 
 {{ .Post.Body }}
-
-PUBLIC KEY
-{{ .Post.Author.PublicKey }}
 ```
 
 {{ range $v, $i := .Post.Replies }}
@@ -19,8 +16,5 @@ Hash: {{ $v.Author.PublicKeyHash }}
 Creation: {{ $v.Creation.Format "2006-01-02 15:04:05" }}
 
 {{ $v.Body }}
-
-PUBLIC KEY
-{{ $v.Author.PublicKey }}
 ```
 {{ end }}
