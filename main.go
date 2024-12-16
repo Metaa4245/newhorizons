@@ -19,9 +19,15 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
+type Identity struct {
+	Name          string
+	PublicKeyHash string
+	PublicKey     string
+}
+
 type Post struct {
 	Id       string
-	Author   x509.Certificate
+	Author   Identity
 	Creation time.Time
 	Views    uint32
 	Replies  []Reply
@@ -29,7 +35,7 @@ type Post struct {
 }
 
 type Reply struct {
-	Author   string
+	Author   Identity
 	Creation time.Time
 	Body     string
 }
@@ -45,7 +51,6 @@ type Context struct {
 type TemplateContext struct {
 	Post Post
 	URL  url.URL
-	Hash string
 }
 
 func root(c *Context) {
@@ -92,23 +97,9 @@ func viewPost(c *Context) {
 		return
 	}
 
-	key, err := x509.MarshalPKIXPublicKey(c.Certificate.PublicKey)
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
-
-	hash := sha256.New()
-	_, err = hash.Write(key)
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
-
 	context := &TemplateContext{
 		URL:  c.URL,
 		Post: *post,
-		Hash: hex.EncodeToString(hash.Sum(nil)),
 	}
 
 	t, err := template.ParseFiles("templates/post.tmpl")
@@ -165,9 +156,28 @@ func submitPost(c *Context) {
 		return
 	}
 
+	key, err := x509.MarshalPKIXPublicKey(c.Certificate.PublicKey)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	hash := sha256.New()
+	_, err = hash.Write(key)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	identity := &Identity{
+		Name:          c.Certificate.Issuer.CommonName,
+		PublicKey:     string(key),
+		PublicKeyHash: hex.EncodeToString(hash.Sum(nil)),
+	}
+
 	post := &Post{
 		Id:       id,
-		Author:   c.Certificate,
+		Author:   *identity,
 		Creation: time.Now().UTC(),
 		Views:    0,
 		Replies:  make([]Reply, 0),

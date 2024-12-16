@@ -1,8 +1,9 @@
 # New Horizons
 Welcome! New Horizons is a textboard for Gemini written in Go.
-To set your name, set the issuer of your certificate to the name you want. Note that the names are not checked for uniqueness, and only a hash of the public key is provided for identity.
+To set your name, set the common name of the issuer of your certificate to the name you want.
+Note that the names are not checked for uniqueness, and a hash of the public key and the public key itself are provided for identity.
 You might not be able to enter the site without a client certificate.
 Posts are UNABLE TO BE DELETED. Only the administrator can delete posts.
 
-=> {{ print "gemini://" .URL.Host "/feed" }} New posts
-=> {{ print "gemini://" .URL.Host "/submit" }} Submit post
+=> {{ print "gemini://" .Host "/feed" }} New posts
+=> {{ print "gemini://" .Host "/submit" }} Submit post
