@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/gob"
+	"encoding/hex"
 	"errors"
 	"io/fs"
 	"log/slog"
@@ -43,6 +45,7 @@ type Context struct {
 type TemplateContext struct {
 	Post Post
 	URL  url.URL
+	Hash string
 }
 
 func root(c *Context) {
@@ -58,7 +61,7 @@ func root(c *Context) {
 		return
 	}
 
-	err = t.Execute(&c.Writer, nil)
+	err = t.Execute(&c.Writer, c.URL)
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -89,9 +92,23 @@ func viewPost(c *Context) {
 		return
 	}
 
+	key, err := x509.MarshalPKIXPublicKey(c.Certificate.PublicKey)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	hash := sha256.New()
+	_, err = hash.Write(key)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
 	context := &TemplateContext{
 		URL:  c.URL,
 		Post: *post,
+		Hash: hex.EncodeToString(hash.Sum(nil)),
 	}
 
 	t, err := template.ParseFiles("templates/post.tmpl")

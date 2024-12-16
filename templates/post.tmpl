@@ -1,4 +1,6 @@
-{{ .Post.Author }} at {{ .Post.Creation.Format "2006-01-02 15:04:05" }}
+=> {{ print "gemini://" .URL.Host "/reply/" .Post.Id }} Reply
+
+{{ .Post.Author.Issuer.CommonName }} <{{ .Hash }}> at {{ .Post.Creation.Format "2006-01-02 15:04:05" }}
 {{ .Post.Views }} views
 ```
 {{ .Post.Body }}
