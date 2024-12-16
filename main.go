@@ -171,7 +171,7 @@ func submitPost(c *Context) {
 
 	identity := &Identity{
 		Name:          c.Certificate.Issuer.CommonName,
-		PublicKey:     string(key),
+		PublicKey:     hex.EncodeToString(key),
 		PublicKeyHash: hex.EncodeToString(hash.Sum(nil)),
 	}
 
