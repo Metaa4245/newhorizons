@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/gob"
 	"errors"
 	"io/fs"
 	"log/slog"
@@ -12,6 +13,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 type Post struct {
@@ -29,6 +32,7 @@ type Reply struct {
 }
 
 type Context struct {
+	URL         url.URL
 	Connection  *tls.Conn
 	Reader      bufio.Reader
 	Writer      bufio.Writer
@@ -61,6 +65,67 @@ func root(c *Context) {
 	}
 }
 
+func submitPost(c *Context) {
+	if c.URL.RawQuery == "" {
+		_, err := c.Writer.WriteString("10 Enter post body\r\n")
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+
+		err = c.Writer.Flush()
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+
+		return
+	}
+
+	body, err := url.QueryUnescape(c.URL.RawQuery)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	post := &Post{
+		Author:   c.Certificate.Issuer.CommonName,
+		Creation: time.Now().UTC(),
+		Views:    0,
+		Replies:  make([]Reply, 0),
+		Body:     body,
+	}
+
+	id, err := gonanoid.New()
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	file, err := os.Create("posts/" + id)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	err = gob.NewEncoder(file).Encode(post)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	_, err = c.Writer.WriteString("30 /post/" + id + "\r\n")
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	err = c.Writer.Flush()
+	if err != nil {
+		slog.Error(err.Error())
+	}
+}
+
 func handleConn(conn *tls.Conn) {
 	defer conn.Close()
 	conn.Handshake()
@@ -84,10 +149,13 @@ func handleConn(conn *tls.Conn) {
 		slog.Error(err.Error())
 		return
 	}
+	c.URL = *u
 
 	switch u.Path {
 	case "/":
 		root(c)
+	case "/submit":
+		submitPost(c)
 	}
 }
 
