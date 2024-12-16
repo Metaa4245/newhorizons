@@ -39,54 +39,39 @@ type Context struct {
 	Certificate x509.Certificate
 }
 
+func errorUtil(e error) {
+	if e != nil {
+		panic(e.Error())
+	}
+}
+
 func root(c *Context) {
 	t, err := template.ParseFiles("templates/root.tmpl")
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 
 	_, err = c.Writer.WriteString("20 text/gemini\r\n")
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 
 	err = t.Execute(&c.Writer, nil)
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 
 	err = c.Writer.Flush()
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 }
 
 func submitPost(c *Context) {
 	if c.URL.RawQuery == "" {
 		_, err := c.Writer.WriteString("10 Enter post body\r\n")
-		if err != nil {
-			slog.Error(err.Error())
-			return
-		}
+		errorUtil(err)
 
 		err = c.Writer.Flush()
-		if err != nil {
-			slog.Error(err.Error())
-			return
-		}
+		errorUtil(err)
 
 		return
 	}
 
 	body, err := url.QueryUnescape(c.URL.RawQuery)
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 
 	post := &Post{
 		Author:   c.Certificate.Issuer.CommonName,
@@ -97,33 +82,19 @@ func submitPost(c *Context) {
 	}
 
 	id, err := gonanoid.New()
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 
 	file, err := os.Create("posts/" + id)
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 
 	err = gob.NewEncoder(file).Encode(post)
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 
 	_, err = c.Writer.WriteString("30 /post/" + id + "\r\n")
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 
 	err = c.Writer.Flush()
-	if err != nil {
-		slog.Error(err.Error())
-	}
+	errorUtil(err)
 }
 
 func handleConn(conn *tls.Conn) {
@@ -138,17 +109,11 @@ func handleConn(conn *tls.Conn) {
 	}
 
 	str, err := c.Reader.ReadString('\n')
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 	str = strings.TrimSuffix(str, "\r\n")
 
 	u, err := url.Parse(str)
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
+	errorUtil(err)
 	c.URL = *u
 
 	switch u.Path {
@@ -161,7 +126,7 @@ func handleConn(conn *tls.Conn) {
 
 func main() {
 	_, err := os.Stat("posts")
-	if err != nil && errors.Is(err, os.ErrNotExist) {
+	if errors.Is(err, os.ErrNotExist) {
 		os.Mkdir("posts", fs.ModeDir)
 		slog.Info("made posts directory")
 	}
@@ -191,6 +156,9 @@ func main() {
 			continue
 		}
 
-		go handleConn(conn.(*tls.Conn))
+		go func() {
+			defer slog.Error(recover().(string))
+			handleConn(conn.(*tls.Conn))
+		}()
 	}
 }
