@@ -1,2 +1,3 @@
-cert.*
-*.exe
+/cert.*
+/*.exe
+/posts

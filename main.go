@@ -4,11 +4,29 @@ import (
 	"bufio"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
+	"io/fs"
 	"log/slog"
 	"net/url"
+	"os"
 	"strings"
 	"text/template"
+	"time"
 )
+
+type Post struct {
+	Author   string
+	Creation time.Time
+	Views    uint32
+	Replies  []Reply
+	Body     string
+}
+
+type Reply struct {
+	Author   string
+	Creation time.Time
+	Body     string
+}
 
 type Context struct {
 	Connection  *tls.Conn
@@ -74,6 +92,12 @@ func handleConn(conn *tls.Conn) {
 }
 
 func main() {
+	_, err := os.Stat("posts")
+	if err != nil && errors.Is(err, os.ErrNotExist) {
+		os.Mkdir("posts", fs.ModeDir)
+		slog.Info("made posts directory")
+	}
+
 	cert, err := tls.LoadX509KeyPair("cert.pem", "cert.key")
 	if err != nil {
 		slog.Error(err.Error())
