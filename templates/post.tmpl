@@ -1,8 +1,12 @@
-{{ .Author }} at {{ .Creation.Format time.DateTime }}
+{{ .Author }} at {{ .Creation.Format "2006-01-02 15:04:05" }}
 {{ .Views }} views
-```{{ .Body }}```
+```
+{{ .Body }}
+```
 
 {{ range $v := .Replies }}
-{{ $v.Author }} at {{ $v.Creation.Format time.DateTime }}
-```{{ $v.Body }}```
+{{ $v.Author }} at {{ $v.Creation.Format "2006-01-02 15:04:05" }}
+```
+{{ $v.Body }}
+```
 {{ end }}
