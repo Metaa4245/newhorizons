@@ -331,8 +331,13 @@ func handleConn(conn *tls.Conn) {
 	}
 	c.URL = *u
 
-	if strings.HasPrefix(u.Path, "/post/") {
+	if strings.HasPrefix(u.Path, "/post") {
 		viewPost(c)
+		return
+	}
+
+	if strings.HasPrefix(u.Path, "/reply") {
+		reply(c)
 		return
 	}
 
