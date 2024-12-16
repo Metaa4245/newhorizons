@@ -40,6 +40,11 @@ type Context struct {
 	Certificate x509.Certificate
 }
 
+type TemplateContext struct {
+	Post Post
+	URL  url.URL
+}
+
 func root(c *Context) {
 	t, err := template.ParseFiles("templates/root.tmpl")
 	if err != nil {
@@ -84,6 +89,11 @@ func viewPost(c *Context) {
 		return
 	}
 
+	context := &TemplateContext{
+		URL:  c.URL,
+		Post: *post,
+	}
+
 	t, err := template.ParseFiles("templates/post.tmpl")
 	if err != nil {
 		slog.Error(err.Error())
@@ -96,7 +106,7 @@ func viewPost(c *Context) {
 		return
 	}
 
-	err = t.Execute(&c.Writer, post)
+	err = t.Execute(&c.Writer, context)
 	if err != nil {
 		slog.Error(err.Error())
 		return

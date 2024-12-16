@@ -1,10 +1,10 @@
-{{ .Author }} at {{ .Creation.Format "2006-01-02 15:04:05" }}
-{{ .Views }} views
+{{ .Post.Author }} at {{ .Post.Creation.Format "2006-01-02 15:04:05" }}
+{{ .Post.Views }} views
 ```
-{{ .Body }}
+{{ .Post.Body }}
 ```
 
-{{ range $v := .Replies }}
+{{ range $v := .Post.Replies }}
 {{ $v.Author }} at {{ $v.Creation.Format "2006-01-02 15:04:05" }}
 ```
 {{ $v.Body }}
