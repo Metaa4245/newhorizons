@@ -206,6 +206,106 @@ func submitPost(c *Context) {
 	}
 }
 
+func reply(c *Context) {
+	split := strings.Split(c.URL.Path, "/")
+
+	if len(split) <= 2 {
+		_, err := c.Writer.WriteString("59 No post ID\r\n")
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+
+		err = c.Writer.Flush()
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+
+		return
+	}
+
+	if c.URL.RawQuery == "" {
+		_, err := c.Writer.WriteString("10 Enter reply body\r\n")
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+
+		err = c.Writer.Flush()
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+
+		return
+	}
+
+	id := split[len(split)-1]
+	body, err := url.QueryUnescape(c.URL.RawQuery)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	key, err := x509.MarshalPKIXPublicKey(c.Certificate.PublicKey)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	hash := sha256.New()
+	_, err = hash.Write(key)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	identity := &Identity{
+		Name:          c.Certificate.Issuer.CommonName,
+		PublicKeyHash: hex.EncodeToString(hash.Sum(nil)),
+	}
+
+	reply := &Reply{
+		Author:   *identity,
+		Creation: time.Now().UTC(),
+		Body:     body,
+	}
+
+	file, err := os.OpenFile("posts/"+id, os.O_RDWR, 0)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+	defer file.Close()
+
+	var post Post
+	err = gob.NewDecoder(file).Decode(&post)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	post.Replies = append(post.Replies, *reply)
+	err = gob.NewEncoder(file).Encode(post)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	_, err = c.Writer.WriteString("30 /post/" + id + "\r\n")
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	err = c.Writer.Flush()
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+}
+
 func handleConn(conn *tls.Conn) {
 	defer conn.Close()
 	conn.Handshake()
