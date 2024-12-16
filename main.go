@@ -39,12 +39,6 @@ type Context struct {
 	Certificate x509.Certificate
 }
 
-func errorUtil(e error) {
-	if e != nil {
-		panic(e.Error())
-	}
-}
-
 func root(c *Context) {
 	t, err := template.ParseFiles("templates/root.tmpl")
 	errorUtil(err)
@@ -53,6 +47,31 @@ func root(c *Context) {
 	errorUtil(err)
 
 	err = t.Execute(&c.Writer, nil)
+	errorUtil(err)
+
+	err = c.Writer.Flush()
+	errorUtil(err)
+}
+
+func viewPost(c *Context) {
+	split := strings.Split(c.URL.Path, "/")
+	id := split[len(split)-1]
+
+	file, err := os.Open("posts/" + id)
+	errorUtil(err)
+	defer file.Close()
+
+	post := &Post{}
+	err = gob.NewDecoder(file).Decode(post)
+	errorUtil(err)
+
+	t, err := template.ParseFiles("templates/post.tmpl")
+	errorUtil(err)
+
+	_, err = c.Writer.WriteString("20 text/gemini\r\n")
+	errorUtil(err)
+
+	err = t.Execute(&c.Writer, post)
 	errorUtil(err)
 
 	err = c.Writer.Flush()
@@ -86,6 +105,7 @@ func submitPost(c *Context) {
 
 	file, err := os.Create("posts/" + id)
 	errorUtil(err)
+	defer file.Close()
 
 	err = gob.NewEncoder(file).Encode(post)
 	errorUtil(err)
@@ -115,6 +135,11 @@ func handleConn(conn *tls.Conn) {
 	u, err := url.Parse(str)
 	errorUtil(err)
 	c.URL = *u
+
+	if strings.HasPrefix(u.Path, "/post/") {
+		viewPost(c)
+		return
+	}
 
 	switch u.Path {
 	case "/":
@@ -157,7 +182,6 @@ func main() {
 		}
 
 		go func() {
-			defer slog.Error(recover().(string))
 			handleConn(conn.(*tls.Conn))
 		}()
 	}

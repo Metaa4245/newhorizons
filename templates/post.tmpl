@@ -1,0 +1,8 @@
+{{ .Author }} at {{ .Creation.Format time.DateTime }}
+{{ .Views }} views
+```{{ .Body }}```
+
+{{ range $v := .Replies }}
+{{ $v.Author }} at {{ $v.Creation.Format time.DateTime }}
+```{{ $v.Body }}```
+{{ end }}
