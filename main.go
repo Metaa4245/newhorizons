@@ -18,7 +18,8 @@ import (
 )
 
 type Post struct {
-	Author   string
+	Id       string
+	Author   x509.Certificate
 	Creation time.Time
 	Views    uint32
 	Replies  []Reply
@@ -131,18 +132,19 @@ func submitPost(c *Context) {
 		return
 	}
 
-	post := &Post{
-		Author:   c.Certificate.Issuer.CommonName,
-		Creation: time.Now().UTC(),
-		Views:    0,
-		Replies:  make([]Reply, 0),
-		Body:     body,
-	}
-
 	id, err := gonanoid.New()
 	if err != nil {
 		slog.Error(err.Error())
 		return
+	}
+
+	post := &Post{
+		Id:       id,
+		Author:   c.Certificate,
+		Creation: time.Now().UTC(),
+		Views:    0,
+		Replies:  make([]Reply, 0),
+		Body:     body,
 	}
 
 	file, err := os.Create("posts/" + id)
@@ -204,8 +206,22 @@ func handleConn(conn *tls.Conn) {
 	switch u.Path {
 	case "/":
 		root(c)
+		return
 	case "/submit":
 		submitPost(c)
+		return
+	}
+
+	_, err = c.Writer.WriteString("51\r\n")
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	err = c.Writer.Flush()
+	if err != nil {
+		slog.Error(err.Error())
+		return
 	}
 }
 
