@@ -41,16 +41,28 @@ type Context struct {
 
 func root(c *Context) {
 	t, err := template.ParseFiles("templates/root.tmpl")
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	_, err = c.Writer.WriteString("20 text/gemini\r\n")
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	err = t.Execute(&c.Writer, nil)
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	err = c.Writer.Flush()
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 }
 
 func viewPost(c *Context) {
@@ -58,39 +70,66 @@ func viewPost(c *Context) {
 	id := split[len(split)-1]
 
 	file, err := os.Open("posts/" + id)
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 	defer file.Close()
 
 	post := &Post{}
 	err = gob.NewDecoder(file).Decode(post)
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	t, err := template.ParseFiles("templates/post.tmpl")
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	_, err = c.Writer.WriteString("20 text/gemini\r\n")
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	err = t.Execute(&c.Writer, post)
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	err = c.Writer.Flush()
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 }
 
 func submitPost(c *Context) {
 	if c.URL.RawQuery == "" {
 		_, err := c.Writer.WriteString("10 Enter post body\r\n")
-		errorUtil(err)
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
 
 		err = c.Writer.Flush()
-		errorUtil(err)
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
 
 		return
 	}
 
 	body, err := url.QueryUnescape(c.URL.RawQuery)
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	post := &Post{
 		Author:   c.Certificate.Issuer.CommonName,
@@ -101,20 +140,35 @@ func submitPost(c *Context) {
 	}
 
 	id, err := gonanoid.New()
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	file, err := os.Create("posts/" + id)
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 	defer file.Close()
 
 	err = gob.NewEncoder(file).Encode(post)
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	_, err = c.Writer.WriteString("30 /post/" + id + "\r\n")
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 
 	err = c.Writer.Flush()
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 }
 
 func handleConn(conn *tls.Conn) {
@@ -129,11 +183,17 @@ func handleConn(conn *tls.Conn) {
 	}
 
 	str, err := c.Reader.ReadString('\n')
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 	str = strings.TrimSuffix(str, "\r\n")
 
 	u, err := url.Parse(str)
-	errorUtil(err)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
 	c.URL = *u
 
 	if strings.HasPrefix(u.Path, "/post/") {
