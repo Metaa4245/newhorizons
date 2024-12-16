@@ -21,15 +21,14 @@ import (
 
 type Identity struct {
 	Name          string
-	PublicKeyHash string
 	PublicKey     string
+	PublicKeyHash string
 }
 
 type Post struct {
 	Id       string
 	Author   Identity
 	Creation time.Time
-	Views    uint32
 	Replies  []Reply
 	Body     string
 }
@@ -179,7 +178,6 @@ func submitPost(c *Context) {
 		Id:       id,
 		Author:   *identity,
 		Creation: time.Now().UTC(),
-		Views:    0,
 		Replies:  make([]Reply, 0),
 		Body:     body,
 	}
