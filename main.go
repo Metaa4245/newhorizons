@@ -279,7 +279,7 @@ func reply(c *Context) {
 	}
 	defer file.Close()
 
-	var post Post
+	post := &Post{}
 	err = gob.NewDecoder(file).Decode(&post)
 	if err != nil {
 		slog.Error(err.Error())
