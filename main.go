@@ -1,3 +1,6 @@
+//go:generate msgp
+//msgp:ignore Context
+//msgp:ignore TemplateContext
 package main
 
 import (
