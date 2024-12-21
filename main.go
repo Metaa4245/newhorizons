@@ -98,6 +98,9 @@ func viewPost(c *Context) {
 		return
 	}
 
+	println(post.Replies)
+	println(post.Author.Name)
+
 	context := &TemplateContext{
 		URL:  c.URL,
 		Post: *post,
@@ -190,7 +193,14 @@ func submitPost(c *Context) {
 	}
 	defer file.Close()
 
-	err = post.EncodeMsg(msgp.NewWriter(file))
+	writer := msgp.NewWriter(file)
+	err = post.EncodeMsg(writer)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	err = writer.Flush()
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -290,7 +300,15 @@ func reply(c *Context) {
 	}
 
 	post.Replies = append(post.Replies, *reply)
-	err = post.EncodeMsg(msgp.NewWriter(file))
+
+	writer := msgp.NewWriter(file)
+	err = post.EncodeMsg(writer)
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+
+	err = writer.Flush()
 	if err != nil {
 		slog.Error(err.Error())
 		return
