@@ -1,6 +1,3 @@
-//go:generate msgp
-//msgp:ignore Context
-//msgp:ignore TemplateContext
 package main
 
 import (
@@ -19,7 +16,7 @@ import (
 	"time"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
-	"github.com/tinylib/msgp/msgp"
+	"github.com/shamaton/msgpack/v2"
 )
 
 type Identity struct {
@@ -92,7 +89,7 @@ func viewPost(c *Context) {
 	defer file.Close()
 
 	post := &Post{}
-	err = post.DecodeMsg(msgp.NewReader(file))
+	err = msgpack.UnmarshalRead(file, post)
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -193,14 +190,7 @@ func submitPost(c *Context) {
 	}
 	defer file.Close()
 
-	writer := msgp.NewWriter(file)
-	err = post.EncodeMsg(writer)
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
-
-	err = writer.Flush()
+	err = msgpack.MarshalWrite(file, post)
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -293,7 +283,7 @@ func reply(c *Context) {
 	defer file.Close()
 
 	post := &Post{}
-	err = post.DecodeMsg(msgp.NewReader(file))
+	err = msgpack.UnmarshalRead(file, post)
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -301,14 +291,7 @@ func reply(c *Context) {
 
 	post.Replies = append(post.Replies, *reply)
 
-	writer := msgp.NewWriter(file)
-	err = post.EncodeMsg(writer)
-	if err != nil {
-		slog.Error(err.Error())
-		return
-	}
-
-	err = writer.Flush()
+	err = msgpack.MarshalWrite(file, post)
 	if err != nil {
 		slog.Error(err.Error())
 		return
