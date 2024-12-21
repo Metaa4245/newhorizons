@@ -8,7 +8,6 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/gob"
 	"encoding/hex"
 	"errors"
 	"io/fs"
@@ -20,6 +19,7 @@ import (
 	"time"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/tinylib/msgp/msgp"
 )
 
 type Identity struct {
@@ -92,7 +92,7 @@ func viewPost(c *Context) {
 	defer file.Close()
 
 	post := &Post{}
-	err = gob.NewDecoder(file).Decode(post)
+	err = post.DecodeMsg(msgp.NewReader(file))
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -190,7 +190,7 @@ func submitPost(c *Context) {
 	}
 	defer file.Close()
 
-	err = gob.NewEncoder(file).Encode(post)
+	err = post.EncodeMsg(msgp.NewWriter(file))
 	if err != nil {
 		slog.Error(err.Error())
 		return
@@ -283,14 +283,14 @@ func reply(c *Context) {
 	defer file.Close()
 
 	post := &Post{}
-	err = gob.NewDecoder(file).Decode(&post)
+	err = post.DecodeMsg(msgp.NewReader(file))
 	if err != nil {
 		slog.Error(err.Error())
 		return
 	}
 
 	post.Replies = append(post.Replies, *reply)
-	err = gob.NewEncoder(file).Encode(post)
+	err = post.EncodeMsg(msgp.NewWriter(file))
 	if err != nil {
 		slog.Error(err.Error())
 		return
